@@ -9,6 +9,8 @@ import 'package:health_wallet/features/home/data/data_source/local/home_local_da
 import 'package:health_wallet/features/home/domain/entities/overview_card.dart';
 import 'package:health_wallet/features/home/domain/entities/patient_vitals.dart';
 import 'package:health_wallet/features/home/domain/factory/patient_vitals_factory.dart';
+import 'package:health_wallet/core/services/auth/patient_auth_service.dart';
+import 'package:health_wallet/core/services/blockchain/care_x_api_service.dart';
 import 'package:health_wallet/features/records/domain/entity/entity.dart';
 import 'package:health_wallet/features/records/domain/repository/records_repository.dart';
 import 'package:health_wallet/features/sync/domain/entities/source.dart';
@@ -28,6 +30,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final SyncRepository _syncRepository;
   final PatientDeduplicationService _deduplicationService;
   final PatientSelectionService _patientSelectionService;
+  final PatientAuthService _authService;
+  final CareXApiService _careXApiService;
   final PatientVitalFactory _patientVitalFactory = PatientVitalFactory();
 
   static const int _minVisibleVitalsCount = 4;
@@ -40,6 +44,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     this._syncRepository,
     this._deduplicationService,
     this._patientSelectionService,
+    this._authService,
+    this._careXApiService,
   ) : super(const HomeState()) {
     on<HomeInitialised>(_onInitialised);
     on<HomeSourceChanged>(_onSourceChanged);
@@ -350,7 +356,60 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       [List<String>? patientSourceIds]) async {
     final obs = await _fetchResourcesFromAllSources(
         [FhirType.Observation], sourceId, patientSourceIds);
-    return _patientVitalFactory.buildFromResources(obs);
+    final fhirVitals = _patientVitalFactory.buildFromResources(obs);
+
+    // [Care-X] Fetch Live Blockchain Vitals into the aggregator
+    try {
+      final account = await _authService.getCurrentAccount();
+      if (account != null) {
+        final careXPatient =
+            await _careXApiService.getPatientByWallet(account.walletAddress);
+        if (careXPatient != null) {
+          final liveVitals =
+              await _careXApiService.getVitalsForPatient(careXPatient.id);
+          // Merge Blockchain data into the default N/A placeholders
+          final merged = _mergeCareXVitals(fhirVitals, liveVitals);
+          return merged;
+        }
+      }
+    } catch (e) {
+      logger.e('Failed to fetch Care-X Vitals: $e');
+    }
+
+    return fhirVitals;
+  }
+
+  List<PatientVital> _mergeCareXVitals(
+      List<PatientVital> baseVitals, List<dynamic> liveVitals) {
+    if (liveVitals.isEmpty) return baseVitals;
+
+    final latestCareX = <String, PatientVital>{};
+
+    for (var v in liveVitals) {
+      final titleStr = (v.vitalType as String?) ?? '';
+      final valueStr = (v.value as String?) ?? '';
+      final unitStr = (v.unit as String?) ?? '';
+
+      final vitalType = PatientVitalTypeX.fromTitle(titleStr);
+      if (vitalType != null) {
+        latestCareX[vitalType.title] = PatientVital(
+          title: vitalType.title,
+          value: valueStr,
+          unit: unitStr.isNotEmpty ? unitStr : vitalType.defaultUnit,
+          status:
+              'Normal', // CareX doesn't store statuses natively, defaulting to Normal, or you could add calc logic
+          effectiveDate: DateTime.now(), // Realtime
+          observationId: 'blockchain_${v.vitalId}',
+        );
+      }
+    }
+
+    return baseVitals.map((base) {
+      if (latestCareX.containsKey(base.title)) {
+        return latestCareX[base.title]!;
+      }
+      return base;
+    }).toList();
   }
 
   Future<
@@ -472,6 +531,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }) async {
     emit(state.copyWith(status: const HomeStatus.loading()));
     try {
+      final account = await _authService.getCurrentAccount();
+      String? activePatientName = account?.name;
+
       final sourceId = _resolveSourceId(overrideSourceId);
 
       final prefs = await SharedPreferences.getInstance();
@@ -498,6 +560,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       emit(state.copyWith(
         status: const HomeStatus.success(),
+        selectedPatientName: activePatientName,
         sources: sources,
         selectedSource: currentSelectedSource,
         patient: patientResources.isNotEmpty

@@ -11,6 +11,8 @@ import 'package:health_wallet/features/user/presentation/preferences_modal/widge
 import 'package:health_wallet/core/widgets/dialogs/confirmation_dialog.dart';
 import 'package:health_wallet/features/user/presentation/services/url_launcher.dart';
 import 'package:health_wallet/gen/assets.gen.dart';
+import 'package:health_wallet/core/services/auth/patient_auth_service.dart';
+import 'package:health_wallet/core/di/injection.dart';
 
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key});
@@ -97,7 +99,8 @@ class SettingsSection extends StatelessWidget {
               const SizedBox(height: Insets.medium),
               InkWell(
                 onTap: () {
-                  UrlLauncherService.launchURL('https://healthwallet.me/#contact');
+                  UrlLauncherService.launchURL(
+                      'https://healthwallet.me/#contact');
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
@@ -137,7 +140,45 @@ class SettingsSection extends StatelessWidget {
                       Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
-                        color: context.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: context.colorScheme.onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: Insets.medium),
+              InkWell(
+                onTap: () {
+                  ConfirmationDialog.show(
+                    context: context,
+                    title: 'Sign Out',
+                    confirmText: 'Sign Out',
+                    cancelText: context.l10n.cancel,
+                    onConfirm: () async {
+                      await getIt<PatientAuthService>().logout();
+                      if (context.mounted) {
+                        context.appRouter.replaceAll([const LoginRoute()]);
+                      }
+                    },
+                  );
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: Insets.small),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Sign Out',
+                        style: AppTextStyle.bodySmall.copyWith(
+                          color: context.colorScheme.error,
+                        ),
+                      ),
+                      Icon(
+                        Icons.logout,
+                        size: 16,
+                        color: context.colorScheme.error,
                       ),
                     ],
                   ),

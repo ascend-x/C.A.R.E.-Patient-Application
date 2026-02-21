@@ -10,6 +10,8 @@ import 'package:health_wallet/features/notifications/bloc/notification_bloc.dart
 
 import 'package:health_wallet/features/home/presentation/bloc/home_bloc.dart';
 import 'package:health_wallet/features/home/data/data_source/local/home_local_data_source.dart';
+import 'package:health_wallet/core/services/auth/patient_auth_service.dart';
+import 'package:health_wallet/core/services/blockchain/care_x_api_service.dart';
 import 'package:health_wallet/features/records/domain/repository/records_repository.dart';
 import 'package:health_wallet/features/records/presentation/bloc/records_bloc.dart';
 import 'package:health_wallet/features/scan/presentation/bloc/scan_bloc.dart';
@@ -45,6 +47,8 @@ class App extends StatelessWidget {
             getIt<SyncRepository>(),
             getIt<PatientDeduplicationService>(),
             getIt<PatientSelectionService>(),
+            getIt<PatientAuthService>(),
+            getIt<CareXApiService>(),
           )..add(const HomeInitialised()),
         ),
         BlocProvider(
