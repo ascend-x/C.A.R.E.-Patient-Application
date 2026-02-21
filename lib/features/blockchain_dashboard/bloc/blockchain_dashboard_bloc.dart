@@ -22,7 +22,6 @@ class BlockchainDashboardBloc
     this._authService,
   ) : super(const BlockchainDashboardState()) {
     on<BlockchainDashboardStarted>(_onStarted);
-    on<BlockchainDashboardStarted>(_onStarted);
     on<BlockchainDashboardRefreshed>(_onRefreshed);
     on<BlockchainDocumentShareRequested>(_onShareRequested);
     on<BlockchainDocumentRevokeRequested>(_onRevokeRequested);
