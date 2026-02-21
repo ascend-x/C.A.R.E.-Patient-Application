@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:health_wallet/core/services/blockchain/blockchain_service.dart';
 import 'package:health_wallet/core/services/blockchain/care_x_api_service.dart';
+import 'package:health_wallet/core/services/auth/patient_auth_service.dart';
 import 'package:health_wallet/core/services/blockchain/care_x_wallet_service.dart';
 import 'package:injectable/injectable.dart';
 
@@ -12,16 +13,16 @@ part 'blockchain_dashboard_event.dart';
 class BlockchainDashboardBloc
     extends Bloc<BlockchainDashboardEvent, BlockchainDashboardState> {
   final BlockchainService _blockchainService;
+  final PatientAuthService _authService;
   final CareXApiService _apiService;
-  final CareXWalletService _walletService;
 
   BlockchainDashboardBloc(
     this._blockchainService,
     this._apiService,
-    this._walletService,
+    this._authService,
   ) : super(const BlockchainDashboardState()) {
     on<BlockchainDashboardStarted>(_onStarted);
-    on<BlockchainWalletSelected>(_onWalletSelected);
+    on<BlockchainDashboardStarted>(_onStarted);
     on<BlockchainDashboardRefreshed>(_onRefreshed);
     on<BlockchainDocumentShareRequested>(_onShareRequested);
     on<BlockchainDocumentRevokeRequested>(_onRevokeRequested);
@@ -33,39 +34,30 @@ class BlockchainDashboardBloc
   ) async {
     emit(state.copyWith(status: BlockchainDashboardStatus.loading));
     try {
-      final wallet = await _walletService.getCurrentWallet();
+      final account = await _authService.getCurrentAccount();
       final connected = await _blockchainService.isConnected();
 
-      if (wallet == null) {
+      if (account == null) {
         emit(state.copyWith(
-          status: BlockchainDashboardStatus.noWallet,
+          status: BlockchainDashboardStatus.failure,
+          error: 'No active session. Please log in.',
           isChainConnected: connected,
         ));
         return;
       }
 
       emit(state.copyWith(
-        currentWallet: wallet,
+        currentWallet: account,
         isChainConnected: connected,
       ));
 
-      await _loadDashboardData(wallet.walletAddress, emit);
+      await _loadDashboardData(account.walletAddress, emit);
     } catch (e) {
       emit(state.copyWith(
         status: BlockchainDashboardStatus.failure,
         error: e.toString(),
       ));
     }
-  }
-
-  Future<void> _onWalletSelected(
-    BlockchainWalletSelected event,
-    Emitter<BlockchainDashboardState> emit,
-  ) async {
-    emit(state.copyWith(status: BlockchainDashboardStatus.loading));
-    await _walletService.saveWallet(event.account);
-    emit(state.copyWith(currentWallet: event.account));
-    await _loadDashboardData(event.account.walletAddress, emit);
   }
 
   Future<void> _onRefreshed(
