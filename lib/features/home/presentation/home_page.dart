@@ -331,7 +331,7 @@ class HomeViewState extends State<HomeView> {
               vertical: Insets.small,
             ),
             child: Text(
-              'Patient: ${FhirFieldExtractor.extractHumanNameFamilyFirst(state.patient?.name?.first) ?? 'Loading...'}',
+              'Patient: ${FhirFieldExtractor.extractHumanNameFamilyFirst(state.patient?.name?.first) ?? state.selectedPatientName ?? 'Loading...'}',
               style: AppTextStyle.bodyMedium.copyWith(
                 color: context.colorScheme.onSurface,
               ),
@@ -360,15 +360,18 @@ class HomeViewState extends State<HomeView> {
                       width: double.infinity,
                       height: 48,
                       child: FilledButton.icon(
-                        onPressed: () => context.router.push(const BlockchainDashboardRoute()),
+                        onPressed: () => context.router
+                            .push(const BlockchainDashboardRoute()),
                         icon: const Icon(Icons.explore_outlined),
                         label: Text(
                           'Open Care-X Dashboard',
-                          style: AppTextStyle.labelLarge.copyWith(fontWeight: FontWeight.w600),
+                          style: AppTextStyle.labelLarge
+                              .copyWith(fontWeight: FontWeight.w600),
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: context.colorScheme.primaryContainer,
-                          foregroundColor: context.colorScheme.onPrimaryContainer,
+                          foregroundColor:
+                              context.colorScheme.onPrimaryContainer,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
