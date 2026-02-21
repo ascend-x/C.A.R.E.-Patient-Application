@@ -386,20 +386,39 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final latestCareX = <String, PatientVital>{};
 
     for (var v in liveVitals) {
-      final titleStr = (v.vitalType as String?) ?? '';
-      final valueStr = (v.value as String?) ?? '';
-      final unitStr = (v.unit as String?) ?? '';
+      if (v is! CareXVitals) continue;
 
-      final vitalType = PatientVitalTypeX.fromTitle(titleStr);
-      if (vitalType != null) {
-        latestCareX[vitalType.title] = PatientVital(
-          title: vitalType.title,
-          value: valueStr,
-          unit: unitStr.isNotEmpty ? unitStr : vitalType.defaultUnit,
-          status:
-              'Normal', // CareX doesn't store statuses natively, defaulting to Normal, or you could add calc logic
-          effectiveDate: DateTime.now(), // Realtime
-          observationId: 'blockchain_${v.vitalId}',
+      final timestampStr = v.timestamp ?? DateTime.now().toIso8601String();
+      final effectiveDate = DateTime.tryParse(timestampStr) ?? DateTime.now();
+
+      if (v.bpm != null) {
+        latestCareX[PatientVitalType.heartRate.title] = PatientVital(
+          title: PatientVitalType.heartRate.title,
+          value: v.bpm!.toStringAsFixed(0),
+          unit: PatientVitalType.heartRate.defaultUnit,
+          status: 'Normal',
+          effectiveDate: effectiveDate,
+          observationId: 'blockchain_${v.id}',
+        );
+      }
+      if (v.spo2 != null) {
+        latestCareX[PatientVitalType.bloodOxygen.title] = PatientVital(
+          title: PatientVitalType.bloodOxygen.title,
+          value: v.spo2!.toStringAsFixed(0),
+          unit: PatientVitalType.bloodOxygen.defaultUnit,
+          status: 'Normal',
+          effectiveDate: effectiveDate,
+          observationId: 'blockchain_${v.id}',
+        );
+      }
+      if (v.temperature != null) {
+        latestCareX[PatientVitalType.temperature.title] = PatientVital(
+          title: PatientVitalType.temperature.title,
+          value: v.temperature!.toStringAsFixed(1),
+          unit: PatientVitalType.temperature.defaultUnit,
+          status: 'Normal',
+          effectiveDate: effectiveDate,
+          observationId: 'blockchain_${v.id}',
         );
       }
     }

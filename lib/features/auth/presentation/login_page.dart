@@ -62,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: Insets.medium),
                       Text(
-                        'HealthWallet',
+                        'C.A.R.E.-X',
                         textAlign: TextAlign.center,
                         style: AppTextStyle.titleLarge.copyWith(
                           fontWeight: FontWeight.bold,
@@ -71,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: Insets.extraSmall),
                       Text(
-                        'Patient Portal — powered by Care-X',
+                        'Patient Portal',
                         textAlign: TextAlign.center,
                         style: AppTextStyle.bodySmall.copyWith(
                           color: context.colorScheme.onSurface
