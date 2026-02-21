@@ -151,7 +151,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingWelcomeTitle.
   ///
   /// In en, this message translates to:
-  /// **'a Health Wallet for You!'**
+  /// **'a C.A.R.E. Patient Application for You!'**
   String get onboardingWelcomeTitle;
 
   /// No description provided for @onboardingWelcomeSubtitle.
@@ -733,7 +733,7 @@ abstract class AppLocalizations {
   /// No description provided for @walletHolderDescription.
   ///
   /// In en, this message translates to:
-  /// **'This patient is the primary owner of this health wallet'**
+  /// **'This patient is the primary owner of this C.A.R.E. Patient Application'**
   String get walletHolderDescription;
 
   /// No description provided for @getStarted.
@@ -1375,13 +1375,13 @@ abstract class AppLocalizations {
   /// No description provided for @patientSetupSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Personalize your health wallet with your information'**
+  /// **'Personalize your C.A.R.E. Patient Application with your information'**
   String get patientSetupSubtitle;
 
   /// No description provided for @onboardingSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Set Up my Health Wallet'**
+  /// **'Set Up my C.A.R.E. Patient Application'**
   String get onboardingSetupTitle;
 
   /// No description provided for @onboardingSetupBody.

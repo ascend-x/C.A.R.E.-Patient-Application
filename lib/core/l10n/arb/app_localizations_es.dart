@@ -350,7 +350,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get walletHolderDescription =>
-      'This patient is the primary owner of this health wallet';
+      'This patient is the primary owner of this C.A.R.E. Patient Application';
 
   @override
   String get getStarted => 'Empezar';

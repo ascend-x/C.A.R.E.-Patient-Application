@@ -1,12 +1,12 @@
 
 <div align="center">
 
-<img src="assets/readme/icon_and_healthwallet.svg" alt="HealthWallet.me Logo" width="600">
+<img src="assets/readme/icon_and_healthwallet.svg" alt="C.A.R.E. Patient Application Logo" width="600">
 
 <div style="display: flex; align-items: center; justify-content: center; gap: 40px; margin: 20px 0; flex-wrap: wrap;">
   <div style="flex: 1; min-width: 280px; max-width: 500px; text-align: left;">
     <h3 style="font-size: clamp(1.5rem, 4vw, 2.5rem); margin-bottom: 16px; text-align: left;">One app. All your medical records, safe and ready.</h3>
-    <p style="font-size: clamp(1rem, 2.5vw, 1.2rem); line-height: 1.6; margin-bottom: 20px; text-align: left;"><strong>No more forms. No more repeating yourself.</strong> With HealthWallet.me, your health info is always safe and easy to share.</p>
+    <p style="font-size: clamp(1rem, 2.5vw, 1.2rem); line-height: 1.6; margin-bottom: 20px; text-align: left;"><strong>No more forms. No more repeating yourself.</strong> With C.A.R.E. Patient Application, your health info is always safe and easy to share.</p>
     <div align="center" style="margin-top: 20px;">
       <a href="https://apps.apple.com/app/healthwallet-me/id6748325588">
         <img src="assets/readme/apple_store.svg" alt="Download for iOS" width="200">
@@ -17,7 +17,7 @@
     </div>
   </div>
   <div style="flex: 1; min-width: 280px; text-align: center; display: flex; justify-content: center; align-items: center;">
-    <img src="assets/readme/app.gif" alt="HealthWallet.me App Preview" style="border-radius: 50px; max-width: 100%; width: clamp(250px, 50vw, 400px); height: auto;">
+    <img src="assets/readme/app.gif" alt="C.A.R.E. Patient Application App Preview" style="border-radius: 50px; max-width: 100%; width: clamp(250px, 50vw, 400px); height: auto;">
   </div>
 </div>
 </div>
@@ -45,7 +45,7 @@
 
 ## 📋 About
 
-**HealthWallet.me** is a **patient-controlled**, **community-driven** health record platform that consolidates your medical data from multiple providers into one accessible app.
+**C.A.R.E. Patient Application** is a **patient-controlled**, **community-driven** health record platform that consolidates your medical data from multiple providers into one accessible app.
 
 ### Key Benefits
 - **Patient-Centered** • **Privacy-First** • **FHIR Compliant** • **Offline Capable**
@@ -62,7 +62,7 @@
 ## 🚀 Getting Started
 
 ### 📱 Download the Mobile App
-Get HealthWallet.me from your app store:
+Get C.A.R.E. Patient Application from your app store:
 - **[iOS App Store](https://apps.apple.com/app/healthwallet-me/id6748325588)** 
 - **[Google Play Store](https://play.google.com/store/apps/details?id=com.techstackapps.healthwallet)**
 
@@ -221,7 +221,7 @@ We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for:
 
 # Licenses
 
-[![GitHub license](https://img.shields.io/github/license/fastenhealth/fasten-onprem?style=flat-square)](https://github.com/TechStackApps/HealthWallet.me/blob/master/LICENSE.md)
+[![GitHub license](https://img.shields.io/github/license/fastenhealth/fasten-onprem?style=flat-square)](https://github.com/TechStackApps/C.A.R.E. Patient Application/blob/master/LICENSE.md)
 
 ## 🙏 Acknowledgments 
 - **FHIR Community** - For the healthcare interoperability standards
@@ -230,7 +230,7 @@ We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for:
 
 ## ⭐ Rate Our App
 
-If you find **HealthWallet.me** helpful, please consider rating us in the app stores:
+If you find **C.A.R.E. Patient Application** helpful, please consider rating us in the app stores:
 
 <div align="center">
 
@@ -243,7 +243,7 @@ Your ratings help us improve and reach more people who need better health record
 
 ## 🤝🏼 Sponsorship
 
-**HealthWallet.me** is an open-source project dedicated to improving healthcare accessibility and patient data management.
+**C.A.R.E. Patient Application** is an open-source project dedicated to improving healthcare accessibility and patient data management.
 
 ### Corporate Sponsorship
 

@@ -33,7 +33,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingNext => 'Next';
 
   @override
-  String get onboardingWelcomeTitle => 'a Health Wallet for You!';
+  String get onboardingWelcomeTitle =>
+      'a C.A.R.E. Patient Application for You!';
 
   @override
   String get onboardingWelcomeSubtitle =>
@@ -348,7 +349,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletHolderDescription =>
-      'This patient is the primary owner of this health wallet';
+      'This patient is the primary owner of this C.A.R.E. Patient Application';
 
   @override
   String get getStarted => 'Get started';
@@ -689,10 +690,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get patientSetupSubtitle =>
-      'Personalize your health wallet with your information';
+      'Personalize your C.A.R.E. Patient Application with your information';
 
   @override
-  String get onboardingSetupTitle => 'Set Up my Health Wallet';
+  String get onboardingSetupTitle => 'Set Up my C.A.R.E. Patient Application';
 
   @override
   String get onboardingSetupBody =>

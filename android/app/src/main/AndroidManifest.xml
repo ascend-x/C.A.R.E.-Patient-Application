@@ -11,7 +11,7 @@
 
     <application
         android:name="${applicationName}"
-        android:label="HealthWallet.me"
+        android:label="C.A.R.E. Patient Application"
         android:icon="@mipmap/health_wallet"
         android:largeHeap="true"
         android:enableOnBackInvokedCallback="true">

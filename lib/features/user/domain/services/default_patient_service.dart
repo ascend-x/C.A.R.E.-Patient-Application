@@ -39,11 +39,11 @@ class DefaultPatientService {
       id: dbId,
       sourceId: 'wallet',
       resourceId: resourceId,
-      title: 'Health Wallet Holder',
+      title: 'C.A.R.E. Patient Application Holder',
       name: [
         fhir_r4.HumanName(
           use: fhir_r4.NameUse.official,
-          given: [fhir_r4.FhirString('Health Wallet')],
+          given: [fhir_r4.FhirString('C.A.R.E. Patient Application')],
           family: fhir_r4.FhirString('Holder'),
         ),
       ],
@@ -56,7 +56,7 @@ class DefaultPatientService {
         'name': [
           {
             'use': 'official',
-            'given': ['Health Wallet'],
+            'given': ['C.A.R.E. Patient Application'],
             'family': 'Holder',
           }
         ],
