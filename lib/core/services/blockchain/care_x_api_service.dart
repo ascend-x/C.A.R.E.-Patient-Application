@@ -72,6 +72,36 @@ class CareXVitals {
   }
 }
 
+/// Metadata pulled directly from the IPFS Gateway node
+class IpfsDocumentMetadata {
+  final String patientUuid;
+  final String mimeType;
+  final String? category;
+  final String? sourceSystem;
+  final String? recordHash;
+  final String? fileHash;
+
+  const IpfsDocumentMetadata({
+    required this.patientUuid,
+    required this.mimeType,
+    this.category,
+    this.sourceSystem,
+    this.recordHash,
+    this.fileHash,
+  });
+
+  factory IpfsDocumentMetadata.fromJson(Map<String, dynamic> json) {
+    return IpfsDocumentMetadata(
+      patientUuid: json['patient_uuid'] as String? ?? '',
+      mimeType: json['mime_type'] as String? ?? 'application/octet-stream',
+      category: json['category'] as String?,
+      sourceSystem: json['source_system'] as String?,
+      recordHash: json['record_hash'] as String?,
+      fileHash: json['file_hash'] as String?,
+    );
+  }
+}
+
 /// Model for a medical document from the Care-X EMR.
 /// DB schema: id, patient_wallet, file_name, description, is_secure, timestamp
 class CareXDocument {
@@ -82,6 +112,9 @@ class CareXDocument {
   final String? ipfsHash;
   final String? timestamp;
 
+  // Appended asynchronously from the IPFS network
+  final IpfsDocumentMetadata? ipfsMetadata;
+
   const CareXDocument({
     required this.id,
     required this.patientWallet,
@@ -89,9 +122,11 @@ class CareXDocument {
     this.title,
     this.ipfsHash,
     this.timestamp,
+    this.ipfsMetadata,
   });
 
-  factory CareXDocument.fromJson(Map<String, dynamic> json) {
+  factory CareXDocument.fromJson(Map<String, dynamic> json,
+      {IpfsDocumentMetadata? metadata}) {
     // Actual DB columns: file_name, description — map to our model
     final fileName = json['file_name'] as String?;
     final description = json['description'] as String?;
@@ -107,6 +142,21 @@ class CareXDocument {
       title: title,
       ipfsHash: json['ipfs_hash'] as String?,
       timestamp: json['timestamp'] as String?,
+      ipfsMetadata: metadata,
+    );
+  }
+
+  CareXDocument copyWith({
+    IpfsDocumentMetadata? ipfsMetadata,
+  }) {
+    return CareXDocument(
+      id: id,
+      patientWallet: patientWallet,
+      documentType: documentType,
+      title: title,
+      ipfsHash: ipfsHash,
+      timestamp: timestamp,
+      ipfsMetadata: ipfsMetadata ?? this.ipfsMetadata,
     );
   }
 }
@@ -181,10 +231,36 @@ class CareXApiService {
                 viewerWallet != null ? {'viewer_wallet': viewerWallet} : null);
     final res = await http.get(uri, headers: _headers);
     _checkStatus(res);
+
     final data = jsonDecode(res.body) as List;
-    return data
+    final baseDocuments = data
         .map((e) => CareXDocument.fromJson(e as Map<String, dynamic>))
         .toList();
+
+    // Concurrently fetch the metadata payload for every document that possesses an IPFS hash
+    await Future.wait(baseDocuments.map((doc) async {
+      if (doc.ipfsHash == null || doc.ipfsHash!.isEmpty) return;
+      try {
+        final ipfsUri =
+            Uri.parse('${AppConstants.ipfsGatewayUrl}${doc.ipfsHash!}');
+        final ipfsRes =
+            await http.get(ipfsUri).timeout(const Duration(seconds: 15));
+        if (ipfsRes.statusCode == 200) {
+          final payload = jsonDecode(ipfsRes.body) as Map<String, dynamic>;
+          final metadata = IpfsDocumentMetadata.fromJson(payload);
+          // Mutate the original reference in the list with the copied object
+          final index = baseDocuments.indexOf(doc);
+          if (index != -1) {
+            baseDocuments[index] = doc.copyWith(ipfsMetadata: metadata);
+          }
+        }
+      } catch (e) {
+        // Soft fail if the IPFS network request strictly blocks or drops
+        // Ignored for production: print('Warning: Failed to fetch metadata for IPFS hash ${doc.ipfsHash}: $e');
+      }
+    }));
+
+    return baseDocuments;
   }
 
   /// Grant [recipientWallet] access to [docIds].

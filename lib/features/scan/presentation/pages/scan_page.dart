@@ -102,8 +102,8 @@ class ScanPage extends StatelessWidget {
               if (state.vitals.isNotEmpty) ...[
                 const SizedBox(height: Insets.medium),
                 _ProfileCard(
-                  title: '💓 Vitals Timeline',
-                  children: state.vitals
+                  title: '💓 Vitals Timeline (Latest 8)',
+                  children: state.vitals.reversed
                       .take(8)
                       .map((v) => _VitalTimelineRow(vitals: v))
                       .toList(),
@@ -112,8 +112,8 @@ class ScanPage extends StatelessWidget {
               if (criticalVitals.isNotEmpty) ...[
                 const SizedBox(height: Insets.medium),
                 _ProfileCard(
-                  title: '⚠️ Past Critical Conditions',
-                  children: criticalVitals
+                  title: '⚠️ Recent Critical Conditions',
+                  children: criticalVitals.reversed
                       .take(5)
                       .map((v) => _CriticalRow(vitals: v))
                       .toList(),

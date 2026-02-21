@@ -8,6 +8,9 @@ class AppConstants {
   // EMR REST API (FastAPI running on port 8000 in care-x)
   static const String careXApiBaseUrl = 'http://$hostIp:8000/api/v1';
 
+  // IPFS Local Gateway (to fetch advanced document metadata)
+  static const String ipfsGatewayUrl = 'https://ipfs.snbhowmik.dev/ipfs/';
+
   // Ganache RPC (running on port 7545)
   static const String ganacheRpcUrl = 'http://$hostIp:7545';
 

@@ -7,11 +7,13 @@ import 'package:health_wallet/core/utils/build_context_extension.dart';
 class TrustScoreCard extends StatelessWidget {
   final int recordCount;
   final int keyCount;
+  final int blockchainRecordCount;
 
   const TrustScoreCard({
     super.key,
     this.recordCount = 0,
     this.keyCount = 0,
+    this.blockchainRecordCount = 0,
   });
 
   @override
@@ -37,10 +39,30 @@ class TrustScoreCard extends StatelessWidget {
         icon: Icons.edit_document,
         status: recordCount > 0,
       ),
+      _VerificationItem(
+        label: "Blockchain Anchored",
+        icon: Icons.link,
+        status: blockchainRecordCount > 0,
+      ),
     ];
 
     final activeChecks = verifications.where((v) => v.status).length;
     final score = ((activeChecks / verifications.length) * 100).round();
+
+    final badgeLabel = score >= 80
+        ? 'Excellent'
+        : score >= 60
+            ? 'Good'
+            : score >= 40
+                ? 'Fair'
+                : 'Low';
+    final badgeColor = score >= 80
+        ? Colors.green
+        : score >= 60
+            ? Colors.blue
+            : score >= 40
+                ? Colors.orange
+                : Colors.red;
 
     return Container(
       padding: const EdgeInsets.all(Insets.medium),
@@ -75,18 +97,18 @@ class TrustScoreCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: (context.isDarkMode
-                          ? Colors.green
-                          : Colors.green.shade100)
+                          ? badgeColor
+                          : badgeColor.withValues(alpha: 0.3))
                       .withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
-                    color: Colors.green.withValues(alpha: 0.3),
+                    color: badgeColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Text(
-                  "Excellent",
+                  badgeLabel,
                   style: AppTextStyle.labelSmall.copyWith(
-                    color: Colors.green,
+                    color: badgeColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

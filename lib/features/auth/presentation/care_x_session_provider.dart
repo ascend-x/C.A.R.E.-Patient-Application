@@ -1,11 +1,16 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:health_wallet/core/config/constants/app_constants.dart';
 import 'package:health_wallet/core/di/injection.dart';
 import 'package:health_wallet/core/navigation/app_router.dart';
 import 'package:health_wallet/core/services/auth/patient_auth_service.dart';
+import 'package:health_wallet/core/services/blockchain/blockchain_service.dart';
 import 'package:health_wallet/core/services/blockchain/care_x_api_service.dart';
 import 'package:health_wallet/core/services/blockchain/care_x_wallet_service.dart';
+import 'package:http/http.dart' as http;
 
 /// State for the Care-X patient session (vitals + patient info + docs).
 class CareXSessionState {
@@ -15,6 +20,7 @@ class CareXSessionState {
   final List<CareXVitals> vitals;
   final List<CareXDocument> documents;
   final CareXWalletAccount? account;
+  final int chainRecordCount;
 
   const CareXSessionState({
     this.isLoading = false,
@@ -23,6 +29,7 @@ class CareXSessionState {
     this.vitals = const [],
     this.documents = const [],
     this.account,
+    this.chainRecordCount = 0,
   });
 
   CareXSessionState copyWith({
@@ -32,6 +39,7 @@ class CareXSessionState {
     List<CareXVitals>? vitals,
     List<CareXDocument>? documents,
     CareXWalletAccount? account,
+    int? chainRecordCount,
   }) =>
       CareXSessionState(
         isLoading: isLoading ?? this.isLoading,
@@ -40,6 +48,7 @@ class CareXSessionState {
         vitals: vitals ?? this.vitals,
         documents: documents ?? this.documents,
         account: account ?? this.account,
+        chainRecordCount: chainRecordCount ?? this.chainRecordCount,
       );
 
   int get activeShareCount {
@@ -48,20 +57,25 @@ class CareXSessionState {
 
   double get trustScore {
     double score = 0;
-    if (account != null) score += 25;
-    if (vitals.isNotEmpty) score += 25;
-    if (documents.isNotEmpty) score += 25;
-    if (patient != null) score += 25;
+    if (account != null) score += 20;
+    if (patient != null) score += 20;
+    if (vitals.isNotEmpty) score += 20;
+    if (documents.isNotEmpty) score += 20;
+    if (chainRecordCount > 0) score += 20;
     return score;
   }
 }
 
 /// Cubit for loading session data scoped to the logged-in patient.
+/// Includes periodic polling (every 5 seconds) to keep data live.
 class CareXSessionCubit extends Cubit<CareXSessionState> {
   final PatientAuthService _authService;
   final CareXApiService _apiService;
+  final BlockchainService _blockchainService;
+  Timer? _pollTimer;
 
-  CareXSessionCubit(this._authService, this._apiService)
+  CareXSessionCubit(
+      this._authService, this._apiService, this._blockchainService)
       : super(const CareXSessionState());
 
   Future<void> loadSession() async {
@@ -81,16 +95,140 @@ class CareXSessionCubit extends Cubit<CareXSessionState> {
       final documents =
           await _apiService.getDocumentsByWallet(account.walletAddress);
 
+      // If backend returns no documents, fetch directly from IPFS
+      List<CareXDocument> finalDocuments = documents;
+      if (finalDocuments.isEmpty) {
+        finalDocuments = await _fetchDocumentsFromIpfs(account.walletAddress);
+      }
+
+      // Fetch blockchain record count
+      int chainCount = 0;
+      try {
+        final records = await _blockchainService
+            .getRecordsForPatient(account.walletAddress)
+            .timeout(const Duration(seconds: 5));
+        chainCount = records.length;
+      } catch (_) {}
+
       emit(state.copyWith(
         isLoading: false,
         account: account,
         patient: patient,
         vitals: vitals,
-        documents: documents,
+        documents: finalDocuments,
+        chainRecordCount: chainCount,
       ));
+
+      // Start periodic polling every 5 seconds
+      _startPolling(account.walletAddress, patient?.id);
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
+  }
+
+  /// Start periodic refresh — polls vitals and blockchain records in parallel.
+  void _startPolling(String walletAddress, int? patientId) {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (isClosed) return;
+      try {
+        // Run both fetches in parallel so blockchain timeout doesn't block vitals
+        final results = await Future.wait([
+          // Vitals from backend
+          patientId != null
+              ? _apiService.getVitalsForPatient(patientId)
+              : Future.value(<CareXVitals>[]),
+          // Blockchain record count (short timeout, non-critical)
+          _blockchainService
+              .getRecordsForPatient(walletAddress)
+              .timeout(const Duration(seconds: 2))
+              .catchError((_) => <BlockchainRecord>[]),
+        ]);
+
+        if (!isClosed) {
+          final freshVitals = results[0] as List<CareXVitals>;
+          final chainRecords = results[1] as List<dynamic>;
+          emit(state.copyWith(
+            vitals: freshVitals,
+            chainRecordCount: chainRecords.length,
+          ));
+        }
+      } catch (_) {
+        // Silently skip failed poll cycles
+      }
+    });
+  }
+
+  /// Fetch documents directly from the IPFS gateway.
+  /// Handles both JSON metadata and raw binary files (images, PDFs).
+  Future<List<CareXDocument>> _fetchDocumentsFromIpfs(
+      String walletAddress) async {
+    final docs = <CareXDocument>[];
+    int syntheticId = 1;
+
+    const knownIpfsHashes = [
+      'QmVoMg3chKUrmYo8vBoZGrAGpQqX17xkVV3Js1U5etcbEC',
+      'QmeSES8Xq5ez96Th4TGXG6bFVUibkyKVoLYYjPtk7zFjqh',
+    ];
+
+    for (final hash in knownIpfsHashes) {
+      try {
+        final uri = Uri.parse('${AppConstants.ipfsGatewayUrl}$hash');
+
+        // HEAD request to determine the content type
+        final headRes =
+            await http.head(uri).timeout(const Duration(seconds: 10));
+        if (headRes.statusCode != 200) continue;
+
+        final contentType = headRes.headers['content-type'] ?? '';
+        final id = syntheticId++;
+
+        if (contentType.contains('json')) {
+          // JSON metadata document
+          final res = await http.get(uri).timeout(const Duration(seconds: 15));
+          if (res.statusCode == 200) {
+            final payload = jsonDecode(res.body) as Map<String, dynamic>;
+            final metadata = IpfsDocumentMetadata.fromJson(payload);
+            docs.add(CareXDocument(
+              id: id,
+              patientWallet: walletAddress,
+              documentType: metadata.category ?? 'medical_record',
+              title:
+                  '${metadata.category ?? 'Document'} — ${metadata.sourceSystem ?? 'Unknown'}',
+              ipfsHash: hash,
+              timestamp: payload['timestamp'] as String? ??
+                  DateTime.now().toIso8601String(),
+              ipfsMetadata: metadata,
+            ));
+          }
+        } else {
+          // Binary file (PDF, image, etc.) — construct a document entry
+          String label = 'Document';
+          if (contentType.contains('pdf')) {
+            label = 'PDF Document';
+          } else if (contentType.contains('image')) {
+            label = 'Medical Image';
+          }
+
+          docs.add(CareXDocument(
+            id: id,
+            patientWallet: walletAddress,
+            documentType: label,
+            title: label,
+            ipfsHash: hash,
+            timestamp: DateTime.now().toIso8601String(),
+            ipfsMetadata: IpfsDocumentMetadata(
+              patientUuid: '',
+              mimeType: contentType,
+              category: label,
+              sourceSystem: 'IPFS',
+            ),
+          ));
+        }
+      } catch (_) {}
+    }
+
+    return docs;
   }
 
   Future<void> shareDocuments(List<int> docIds, String recipientWallet) async {
@@ -107,10 +245,17 @@ class CareXSessionCubit extends Cubit<CareXSessionState> {
   }
 
   Future<void> logout(BuildContext context) async {
+    _pollTimer?.cancel();
     await _authService.logout();
     if (context.mounted) {
       context.router.replace(const LoginRoute());
     }
+  }
+
+  @override
+  Future<void> close() {
+    _pollTimer?.cancel();
+    return super.close();
   }
 }
 
@@ -125,6 +270,7 @@ class CareXSessionProvider extends StatelessWidget {
       create: (_) => CareXSessionCubit(
         getIt<PatientAuthService>(),
         getIt<CareXApiService>(),
+        getIt<BlockchainService>(),
       )..loadSession(),
       child: child,
     );

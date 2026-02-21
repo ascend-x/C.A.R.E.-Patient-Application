@@ -151,7 +151,7 @@ class _VitalsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DashCard(
-      title: '💓 All Vitals (EMR → Blockchain)',
+      title: '💓 Latest Vitals (EMR → Blockchain)',
       child: vitals.isEmpty
           ? Text('No vitals recorded yet.',
               style: TextStyle(

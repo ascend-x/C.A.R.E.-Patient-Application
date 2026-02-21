@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:health_wallet/core/config/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:health_wallet/core/theme/app_insets.dart';
@@ -268,60 +269,86 @@ class _FileAccessViewState extends State<_FileAccessView> {
             ),
             itemBuilder: (ctx, i) {
               final doc = docs[i];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color:
-                            context.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+              return GestureDetector(
+                onTap: () => _showDocumentDetail(context, doc),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: context.colorScheme.primary
+                              .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(Icons.description_outlined,
+                            size: 18, color: context.colorScheme.primary),
                       ),
-                      child: Icon(Icons.description_outlined,
-                          size: 18, color: context.colorScheme.primary),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            doc.title ?? doc.documentType,
-                            style: AppTextStyle.bodySmall.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: context.colorScheme.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              if (doc.ipfsHash == null)
-                                _SecureBadge(
-                                    secure: doc.documentType != 'revoked'),
-                              const SizedBox(width: 6),
-                              Text(
-                                doc.timestamp ?? '',
-                                style: AppTextStyle.bodySmall.copyWith(
-                                  color: context.colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
-                                  fontSize: 10,
-                                ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              doc.title ?? doc.documentType,
+                              style: AppTextStyle.bodySmall.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: context.colorScheme.onSurface,
                               ),
-                            ],
-                          ),
-                        ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                if (doc.ipfsMetadata != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 6),
+                                    child: _MimeBadge(
+                                        mime: doc.ipfsMetadata!.mimeType),
+                                  ),
+                                if (doc.ipfsMetadata?.category != null)
+                                  Text(
+                                    '${doc.ipfsMetadata!.category} • ',
+                                    style: AppTextStyle.bodySmall.copyWith(
+                                      color: context.colorScheme.primary
+                                          .withValues(alpha: 0.8),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                if (doc.ipfsHash == null)
+                                  _SecureBadge(
+                                      secure: doc.documentType != 'revoked'),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    (doc.ipfsMetadata?.sourceSystem != null)
+                                        ? 'Source: ${doc.ipfsMetadata!.sourceSystem}'
+                                        : (doc.timestamp ?? ''),
+                                    style: AppTextStyle.bodySmall.copyWith(
+                                      color: context.colorScheme.onSurface
+                                          .withValues(alpha: 0.4),
+                                      fontSize: 10,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Icons.check_circle_outline,
-                      size: 14,
-                      color: Colors.green,
-                    ),
-                  ],
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: context.colorScheme.onSurface
+                            .withValues(alpha: 0.3),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -403,6 +430,162 @@ class _FileAccessViewState extends State<_FileAccessView> {
               : Colors.black.withValues(alpha: 0.05),
         ),
       );
+
+  void _showDocumentDetail(BuildContext context, CareXDocument doc) {
+    final meta = doc.ipfsMetadata;
+    final mime = meta?.mimeType ?? '';
+    final isImage = mime.contains('image');
+    final isPdf = mime.contains('pdf');
+    final isFile = isImage || isPdf;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: isFile ? 0.85 : 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: context.isDarkMode ? const Color(0xFF1A1A2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      isImage
+                          ? Icons.image_outlined
+                          : Icons.description_outlined,
+                      color: context.colorScheme.primary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      doc.title ?? doc.documentType,
+                      style: AppTextStyle.titleMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  if (meta != null) _MimeBadge(mime: meta.mimeType),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // If this is an image, render it inline
+              if (isImage && doc.ipfsHash != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    '${AppConstants.ipfsGatewayUrl}${doc.ipfsHash!}',
+                    fit: BoxFit.contain,
+                    loadingBuilder: (ctx, child, progress) {
+                      if (progress == null) return child;
+                      return SizedBox(
+                        height: 200,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: progress.expectedTotalBytes != null
+                                ? progress.cumulativeBytesLoaded /
+                                    progress.expectedTotalBytes!
+                                : null,
+                            color: context.colorScheme.primary,
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                          child: Icon(Icons.broken_image,
+                              size: 48, color: Colors.red)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Divider(
+                  color: context.colorScheme.onSurface.withValues(alpha: 0.08)),
+              const SizedBox(height: 12),
+              if (meta?.category != null)
+                _DetailRow(label: 'Category', value: meta!.category!),
+              if (meta?.sourceSystem != null)
+                _DetailRow(label: 'Source System', value: meta!.sourceSystem!),
+              if (meta?.mimeType != null)
+                _DetailRow(label: 'MIME Type', value: meta!.mimeType),
+              if (meta?.patientUuid != null && meta!.patientUuid.isNotEmpty)
+                _DetailRow(label: 'Patient UUID', value: meta.patientUuid),
+              if (doc.timestamp != null)
+                _DetailRow(label: 'Timestamp', value: doc.timestamp!),
+              if (doc.ipfsHash != null)
+                _DetailRow(
+                    label: 'IPFS Hash', value: doc.ipfsHash!, mono: true),
+              if (meta?.recordHash != null)
+                _DetailRow(
+                    label: 'Record Hash', value: meta!.recordHash!, mono: true),
+              if (meta?.fileHash != null)
+                _DetailRow(
+                    label: 'File Hash', value: meta!.fileHash!, mono: true),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_outlined,
+                        color: Colors.green, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Document verified on IPFS — immutable and tamper-proof',
+                        style: AppTextStyle.bodySmall.copyWith(
+                          color: Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _SecureBadge extends StatelessWidget {
@@ -424,6 +607,87 @@ class _SecureBadge extends StatelessWidget {
           fontSize: 9,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+class _MimeBadge extends StatelessWidget {
+  final String mime;
+  const _MimeBadge({required this.mime});
+
+  @override
+  Widget build(BuildContext context) {
+    String label = 'FILE';
+    Color color = Colors.grey;
+
+    if (mime.contains('pdf')) {
+      label = 'PDF';
+      color = Colors.redAccent;
+    } else if (mime.contains('image')) {
+      label = 'IMG';
+      color = Colors.blueAccent;
+    } else if (mime.contains('json') || mime.contains('fhir')) {
+      label = 'JSON';
+      color = Colors.orangeAccent;
+    } else if (mime.contains('xml') || mime.contains('ccd')) {
+      label = 'XML';
+      color = Colors.deepPurpleAccent;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyle.labelSmall.copyWith(
+          color: color,
+          fontSize: 8,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool mono;
+  const _DetailRow(
+      {required this.label, required this.value, this.mono = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyle.labelSmall.copyWith(
+              color: context.colorScheme.onSurface.withValues(alpha: 0.45),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: AppTextStyle.bodySmall.copyWith(
+              color: context.colorScheme.onSurface,
+              fontFamily: mono ? 'monospace' : null,
+              fontSize: mono ? 11 : 13,
+            ),
+          ),
+        ],
       ),
     );
   }

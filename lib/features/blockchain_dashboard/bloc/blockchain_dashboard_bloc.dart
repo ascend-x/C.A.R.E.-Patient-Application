@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:health_wallet/core/services/blockchain/blockchain_service.dart';
@@ -15,6 +16,7 @@ class BlockchainDashboardBloc
   final BlockchainService _blockchainService;
   final PatientAuthService _authService;
   final CareXApiService _apiService;
+  Timer? _pollTimer;
 
   BlockchainDashboardBloc(
     this._blockchainService,
@@ -51,6 +53,14 @@ class BlockchainDashboardBloc
       ));
 
       await _loadDashboardData(account.walletAddress, emit);
+
+      // Start auto-refresh every 5 seconds
+      _pollTimer?.cancel();
+      _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (!isClosed) {
+          add(BlockchainDashboardRefreshed());
+        }
+      });
     } catch (e) {
       emit(state.copyWith(
         status: BlockchainDashboardStatus.failure,
@@ -64,7 +74,7 @@ class BlockchainDashboardBloc
     Emitter<BlockchainDashboardState> emit,
   ) async {
     if (state.currentWallet == null) return;
-    emit(state.copyWith(status: BlockchainDashboardStatus.loading));
+    // Don't show loading spinner on auto-refresh to avoid flicker
     await _loadDashboardData(state.currentWallet!.walletAddress, emit);
   }
 
@@ -130,7 +140,9 @@ class BlockchainDashboardBloc
 
       List<CareXVitals> vitals = [];
       if (patient != null) {
-        vitals = await _apiService.getVitalsForPatient(patient.id);
+        final rawVitals = await _apiService.getVitalsForPatient(patient.id);
+        // Show newest first, limit to 50 to avoid UI lag with Column
+        vitals = rawVitals.reversed.take(50).toList();
       }
 
       emit(state.copyWith(
@@ -147,5 +159,11 @@ class BlockchainDashboardBloc
         error: e.toString(),
       ));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _pollTimer?.cancel();
+    return super.close();
   }
 }

@@ -353,6 +353,7 @@ class HomeViewState extends State<HomeView> {
                       builder: (ctx, sessionState) => TrustScoreCard(
                         recordCount: sessionState.vitals.length,
                         keyCount: sessionState.documents.length,
+                        blockchainRecordCount: sessionState.chainRecordCount,
                       ),
                     ),
                     const SizedBox(height: Insets.medium),
