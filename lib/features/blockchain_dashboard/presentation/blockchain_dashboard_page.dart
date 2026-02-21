@@ -45,11 +45,14 @@ class _BlockchainDashboardView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              'Care-X Live Dashboard',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            Expanded(
+              child: Text(
+                'Care-X Live Dashboard',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -148,7 +151,7 @@ class _VitalsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DashCard(
-      title: '💓 Latest Vitals (EMR → Blockchain)',
+      title: '💓 All Vitals (EMR → Blockchain)',
       child: vitals.isEmpty
           ? Text('No vitals recorded yet.',
               style: TextStyle(
@@ -157,8 +160,7 @@ class _VitalsSection extends StatelessWidget {
                       .onSurface
                       .withValues(alpha: 0.6)))
           : Column(
-              children:
-                  vitals.take(3).map((v) => _VitalRow(vitals: v)).toList(),
+              children: vitals.map((v) => _VitalRow(vitals: v)).toList(),
             ),
     );
   }
