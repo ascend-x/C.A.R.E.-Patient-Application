@@ -255,12 +255,81 @@ class CareXApiService {
           }
         }
       } catch (e) {
-        // Soft fail if the IPFS network request strictly blocks or drops
-        // Ignored for production: print('Warning: Failed to fetch metadata for IPFS hash ${doc.ipfsHash}: $e');
+        // Soft fail
       }
     }));
 
-    return baseDocuments;
+    // [New] Fetch standalone pinning/legacy docs from IPFS node directly
+    final standaloneDocs = await _fetchStandaloneIpfsDocs(walletAddress);
+
+    return [...baseDocuments, ...standaloneDocs];
+  }
+
+  /// Fetch standalone documents (not in EMR DB) directly from the IPFS gateway.
+  Future<List<CareXDocument>> _fetchStandaloneIpfsDocs(
+      String walletAddress) async {
+    final docs = <CareXDocument>[];
+    int syntheticId = 10000;
+
+    const knownIpfsHashes = [
+      'QmVoMg3chKUrmYo8vBoZGrAGpQqX17xkVV3Js1U5etcbEC',
+      'QmeSES8Xq5ez96Th4TGXG6bFVUibkyKVoLYYjPtk7zFjqh',
+    ];
+
+    for (final hash in knownIpfsHashes) {
+      try {
+        final uri = Uri.parse('${AppConstants.ipfsGatewayUrl}$hash');
+        final headRes =
+            await http.head(uri).timeout(const Duration(seconds: 10));
+        if (headRes.statusCode != 200) continue;
+
+        final contentType = headRes.headers['content-type'] ?? '';
+        final id = syntheticId++;
+
+        if (contentType.contains('json')) {
+          final res = await http.get(uri).timeout(const Duration(seconds: 15));
+          if (res.statusCode == 200) {
+            final payload = jsonDecode(res.body) as Map<String, dynamic>;
+            final metadata = IpfsDocumentMetadata.fromJson(payload);
+            docs.add(CareXDocument(
+              id: id,
+              patientWallet: walletAddress,
+              documentType: metadata.category ?? 'medical_record',
+              title:
+                  '${metadata.category ?? 'Document'} — ${metadata.sourceSystem ?? 'Unknown'}',
+              ipfsHash: hash,
+              timestamp: payload['timestamp'] as String? ??
+                  DateTime.now().toIso8601String(),
+              ipfsMetadata: metadata,
+            ));
+          }
+        } else {
+          String label = 'Document';
+          if (contentType.contains('pdf')) {
+            label = 'PDF Document';
+          } else if (contentType.contains('image')) {
+            label = 'Medical Image';
+          }
+
+          docs.add(CareXDocument(
+            id: id,
+            patientWallet: walletAddress,
+            documentType: label,
+            title: label,
+            ipfsHash: hash,
+            timestamp: DateTime.now().toIso8601String(),
+            ipfsMetadata: IpfsDocumentMetadata(
+              patientUuid: '',
+              mimeType: contentType,
+              category: label,
+              sourceSystem: 'IPFS',
+            ),
+          ));
+        }
+      } catch (_) {}
+    }
+
+    return docs;
   }
 
   /// Grant [recipientWallet] access to [docIds].

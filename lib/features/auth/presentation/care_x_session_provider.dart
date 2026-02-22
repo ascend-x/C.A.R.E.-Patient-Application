@@ -1,16 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:health_wallet/core/config/constants/app_constants.dart';
 import 'package:health_wallet/core/di/injection.dart';
 import 'package:health_wallet/core/navigation/app_router.dart';
 import 'package:health_wallet/core/services/auth/patient_auth_service.dart';
 import 'package:health_wallet/core/services/blockchain/blockchain_service.dart';
 import 'package:health_wallet/core/services/blockchain/care_x_api_service.dart';
 import 'package:health_wallet/core/services/blockchain/care_x_wallet_service.dart';
-import 'package:http/http.dart' as http;
 
 /// State for the Care-X patient session (vitals + patient info + docs).
 class CareXSessionState {
@@ -95,12 +92,6 @@ class CareXSessionCubit extends Cubit<CareXSessionState> {
       final documents =
           await _apiService.getDocumentsByWallet(account.walletAddress);
 
-      // If backend returns no documents, fetch directly from IPFS
-      List<CareXDocument> finalDocuments = documents;
-      if (finalDocuments.isEmpty) {
-        finalDocuments = await _fetchDocumentsFromIpfs(account.walletAddress);
-      }
-
       // Fetch blockchain record count
       int chainCount = 0;
       try {
@@ -115,7 +106,7 @@ class CareXSessionCubit extends Cubit<CareXSessionState> {
         account: account,
         patient: patient,
         vitals: vitals,
-        documents: finalDocuments,
+        documents: documents,
         chainRecordCount: chainCount,
       ));
 
@@ -157,78 +148,6 @@ class CareXSessionCubit extends Cubit<CareXSessionState> {
         // Silently skip failed poll cycles
       }
     });
-  }
-
-  /// Fetch documents directly from the IPFS gateway.
-  /// Handles both JSON metadata and raw binary files (images, PDFs).
-  Future<List<CareXDocument>> _fetchDocumentsFromIpfs(
-      String walletAddress) async {
-    final docs = <CareXDocument>[];
-    int syntheticId = 1;
-
-    const knownIpfsHashes = [
-      'QmVoMg3chKUrmYo8vBoZGrAGpQqX17xkVV3Js1U5etcbEC',
-      'QmeSES8Xq5ez96Th4TGXG6bFVUibkyKVoLYYjPtk7zFjqh',
-    ];
-
-    for (final hash in knownIpfsHashes) {
-      try {
-        final uri = Uri.parse('${AppConstants.ipfsGatewayUrl}$hash');
-
-        // HEAD request to determine the content type
-        final headRes =
-            await http.head(uri).timeout(const Duration(seconds: 10));
-        if (headRes.statusCode != 200) continue;
-
-        final contentType = headRes.headers['content-type'] ?? '';
-        final id = syntheticId++;
-
-        if (contentType.contains('json')) {
-          // JSON metadata document
-          final res = await http.get(uri).timeout(const Duration(seconds: 15));
-          if (res.statusCode == 200) {
-            final payload = jsonDecode(res.body) as Map<String, dynamic>;
-            final metadata = IpfsDocumentMetadata.fromJson(payload);
-            docs.add(CareXDocument(
-              id: id,
-              patientWallet: walletAddress,
-              documentType: metadata.category ?? 'medical_record',
-              title:
-                  '${metadata.category ?? 'Document'} — ${metadata.sourceSystem ?? 'Unknown'}',
-              ipfsHash: hash,
-              timestamp: payload['timestamp'] as String? ??
-                  DateTime.now().toIso8601String(),
-              ipfsMetadata: metadata,
-            ));
-          }
-        } else {
-          // Binary file (PDF, image, etc.) — construct a document entry
-          String label = 'Document';
-          if (contentType.contains('pdf')) {
-            label = 'PDF Document';
-          } else if (contentType.contains('image')) {
-            label = 'Medical Image';
-          }
-
-          docs.add(CareXDocument(
-            id: id,
-            patientWallet: walletAddress,
-            documentType: label,
-            title: label,
-            ipfsHash: hash,
-            timestamp: DateTime.now().toIso8601String(),
-            ipfsMetadata: IpfsDocumentMetadata(
-              patientUuid: '',
-              mimeType: contentType,
-              category: label,
-              sourceSystem: 'IPFS',
-            ),
-          ));
-        }
-      } catch (_) {}
-    }
-
-    return docs;
   }
 
   Future<void> shareDocuments(List<int> docIds, String recipientWallet) async {
