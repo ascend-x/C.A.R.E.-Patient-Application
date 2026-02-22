@@ -36,6 +36,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   static const int _minVisibleVitalsCount = 4;
   static const String _demoSourceId = 'demo_data';
+  Timer? _pollTimer;
 
   HomeBloc(
     this._getSourcesUseCase,
@@ -59,7 +60,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         emit(state.copyWith(vitalsExpanded: !state.vitalsExpanded)));
     on<HomeRefreshPreservingOrder>(_onRefreshPreservingOrder);
     on<HomeSourceLabelUpdated>(_onSourceLabelUpdated);
+    on<HomeVitalsRefreshed>(_onVitalsRefreshed);
     on<HomeSourceDeleted>(_onSourceDeleted);
+
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!isClosed) {
+        add(const HomeVitalsRefreshed());
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _pollTimer?.cancel();
+    return super.close();
   }
 
   bool hasData({
@@ -677,6 +696,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           patientSourceIds: event.patientSourceIds);
     } catch (e) {
       logger.e('Error deleting source: $e');
+    }
+  }
+
+  Future<void> _onVitalsRefreshed(
+      HomeVitalsRefreshed event, Emitter<HomeState> emit) async {
+    // Only refresh if not already loading and we have some content
+    if (state.status == const HomeStatus.loading()) return;
+
+    try {
+      final sourceId = _resolveSourceId(state.selectedSource);
+      final vitalsData = await _processVitalsData(sourceId, null);
+
+      emit(state.copyWith(
+        patientVitals: vitalsData.patientVitals,
+        allAvailableVitals: vitalsData.allAvailableVitals,
+      ));
+    } catch (e) {
+      // Background refresh failed, stay silent
+      logger.w('Background vitals refresh failed: $e');
     }
   }
 }

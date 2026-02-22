@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:health_wallet/core/config/constants/app_constants.dart';
 import 'package:health_wallet/core/di/injection.dart';
 import 'package:health_wallet/core/services/blockchain/care_x_api_service.dart';
 import 'package:health_wallet/core/services/auth/patient_auth_service.dart';
@@ -133,6 +134,8 @@ class _BlockchainDashboardView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 _VitalsSection(vitals: state.vitals),
+                const SizedBox(height: 16),
+                _ChainRecordsSection(records: state.chainRecords),
               ],
             ),
           );
@@ -205,6 +208,169 @@ class _VitalRow extends StatelessWidget {
                     .colorScheme
                     .onSurface
                     .withValues(alpha: 0.6)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Blockchain Records Section ──────────────────────────────────────────────
+
+class _ChainRecordsSection extends StatelessWidget {
+  final List<BlockchainRecord> records;
+  const _ChainRecordsSection({required this.records});
+
+  @override
+  Widget build(BuildContext context) {
+    return _DashCard(
+      title: '⛓️ On-Chain Records (Patient Ledger)',
+      child: records.isEmpty
+          ? Text('No on-chain records found.',
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6)))
+          : Column(
+              children: records.map((r) => _ChainRecordRow(record: r)).toList(),
+            ),
+    );
+  }
+}
+
+class _ChainRecordRow extends StatelessWidget {
+  final BlockchainRecord record;
+  const _ChainRecordRow({required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    final isHospitalUploader = record.deviceId.toLowerCase() ==
+        AppConstants.hospitalAddress.toLowerCase();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: record.isCritical
+              ? Theme.of(context).colorScheme.error
+              : Theme.of(context).dividerColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                record.isCritical ? Icons.security_update_warning : Icons.link,
+                size: 16,
+                color: record.isCritical
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Record Block #HASH',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (record.isCritical)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'CRITICAL',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'UPLOADER',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        isHospitalUploader
+                            ? Icons.local_hospital
+                            : Icons.device_hub,
+                        size: 12,
+                        color: isHospitalUploader
+                            ? Colors.blueAccent
+                            : Theme.of(context).colorScheme.secondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isHospitalUploader ? 'Hospital Admin' : 'Unknown Agent',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isHospitalUploader
+                                  ? Colors.blueAccent
+                                  : Theme.of(context).colorScheme.secondary,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'TIMESTAMP',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    record.timestamp.toIso8601String().substring(0, 16),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'IPFS Hash: ${record.ipfsHash.substring(0, 10)}...',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 10,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
+                ),
           ),
         ],
       ),

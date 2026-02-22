@@ -31,6 +31,7 @@ import 'package:health_wallet/core/navigation/app_router.dart';
 import 'package:health_wallet/features/records/domain/utils/fhir_field_extractor.dart';
 import 'package:health_wallet/features/home/presentation/widgets/trust_score_card.dart';
 import 'package:health_wallet/features/home/presentation/widgets/authorized_users_card.dart';
+import 'package:health_wallet/features/home/presentation/widgets/blockchain_vitals_live_feed.dart';
 
 @RoutePage()
 class HomePage extends StatelessWidget {
@@ -356,6 +357,8 @@ class HomeViewState extends State<HomeView> {
                         blockchainRecordCount: sessionState.chainRecordCount,
                       ),
                     ),
+                    const SizedBox(height: Insets.medium),
+                    const BlockchainVitalsLiveFeed(),
                     const SizedBox(height: Insets.medium),
                     SizedBox(
                       width: double.infinity,

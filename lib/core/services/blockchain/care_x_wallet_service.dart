@@ -41,9 +41,9 @@ class CareXAccounts {
 
   static const doctor = CareXWalletAccount(
     name: 'Doctor',
-    walletAddress: '0x3E96F97A042F3005E51DeE6775B84f1599C1b850',
+    walletAddress: '0x6a4a4ff67F3B64CF7CB5492a9F455D4703A35eE3',
     privateKey:
-        '0xc03e36fc9f1af842569c262d9898cfef9932adf865196cb2810ec3868a64318e',
+        '0x84fa8b67ef319b860a065d9f9ed58f19b8fe717bd9addba64ae69e7b5c2bf339',
   );
 
   static const List<CareXWalletAccount> all = [

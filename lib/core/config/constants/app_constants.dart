@@ -18,6 +18,10 @@ class AppConstants {
   static const String contractAddress =
       '0x6EFc0ed7c0514cD4591dC6cdd36A2676B087C525';
 
+  // Hospital Admin Address (who uploads vitals and files)
+  static const String hospitalAddress =
+      '0xDd46cfBee7C531F9b2182B5F0405A2aC73B1Cada';
+
   // Legacy base URL (keep for any internal REST calls)
   static const String baseUrl = careXApiBaseUrl;
 

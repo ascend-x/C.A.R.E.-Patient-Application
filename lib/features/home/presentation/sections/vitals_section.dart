@@ -55,6 +55,10 @@ class VitalsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!editMode) ...[
+          const _LivePulse(),
+          const SizedBox(height: Insets.small),
+        ],
         ReorderableGrid<PatientVital>(
           items: vitalsToShow,
           enabled: editMode,
@@ -409,6 +413,62 @@ class VitalsSection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LivePulse extends StatefulWidget {
+  const _LivePulse();
+
+  @override
+  State<_LivePulse> createState() => _LivePulseState();
+}
+
+class _LivePulseState extends State<_LivePulse>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FadeTransition(
+          opacity: _controller.drive(CurveTween(curve: Curves.easeInOut)),
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'LIVE FROM BLOCKCHAIN',
+          style: AppTextStyle.labelSmall.copyWith(
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.bold,
+            color: context.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
     );
   }
 }

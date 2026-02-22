@@ -84,8 +84,13 @@ class ScanPage extends StatelessWidget {
               const SizedBox(height: Insets.medium),
               _ProfileCard(title: '📊 Medical History', children: [
                 _InfoRow(
-                  label: 'Total Records',
-                  value: '${state.vitals.length} vitals',
+                  label: 'EMR Vitals',
+                  value: '${state.vitals.length} records',
+                ),
+                _InfoRow(
+                  label: 'Blockchain',
+                  value: '${state.chainRecordCount} records',
+                  valueColor: context.colorScheme.primary,
                 ),
                 _InfoRow(
                   label: 'Critical Events',
