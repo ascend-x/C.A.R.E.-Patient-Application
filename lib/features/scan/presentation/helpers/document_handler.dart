@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:health_wallet/core/di/injection.dart';
-import 'package:health_wallet/core/navigation/app_router.dart';
 import 'package:health_wallet/features/home/presentation/bloc/home_bloc.dart';
 import 'package:health_wallet/features/records/domain/entity/encounter/encounter.dart';
 import 'package:health_wallet/features/scan/domain/entity/processing_session.dart';
@@ -15,6 +14,7 @@ import 'package:health_wallet/features/sync/domain/repository/sync_repository.da
 import 'package:health_wallet/features/sync/domain/services/source_type_service.dart';
 import 'package:health_wallet/features/user/presentation/preferences_modal/sections/patient/bloc/patient_bloc.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:health_wallet/core/navigation/app_router.dart';
 
 /// Mixin providing common document handling functionality for scan and import pages.
 ///

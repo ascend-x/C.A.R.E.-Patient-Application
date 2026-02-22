@@ -1,7 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:health_wallet/core/navigation/app_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:health_wallet/core/theme/app_insets.dart';
 import 'package:health_wallet/core/theme/app_text_style.dart';
 import 'package:health_wallet/core/utils/build_context_extension.dart';
@@ -136,7 +136,8 @@ class RecordDetailsPage extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 2),
                       child: infoLine.icon.svg(
                         width: 16,
-                        color: context.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: context.colorScheme.onSurface
+                            .withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -246,14 +247,16 @@ class RecordDetailsPage extends StatelessWidget {
                   children: [
                     infoLine.icon.svg(
                       width: 16,
-                      color: context.colorScheme.onSurface.withValues(alpha: 0.6),
+                      color:
+                          context.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         infoLine.info,
                         style: AppTextStyle.labelLarge.copyWith(
-                          color: context.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: context.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                     )
